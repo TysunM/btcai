@@ -2,7 +2,7 @@ name: PipeFit Pro
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
     paths:
       - 'pipefit-pro/**'
       - '.github/workflows/pipefit-pro.yml'
@@ -10,6 +10,11 @@ on:
     paths:
       - 'pipefit-pro/**'
       - '.github/workflows/pipefit-pro.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pipefit-pro-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
