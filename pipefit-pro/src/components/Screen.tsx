@@ -30,9 +30,4 @@ export function Screen({
   );
 }
 
-export function Block({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
-  const t = useTheme();
-  return <View style={[{ paddingHorizontal: t.layout.screenPadding }, style]}>{children}</View>;
-}
-
 const styles = StyleSheet.create({ content: { width: '100%', alignSelf: 'center' } });

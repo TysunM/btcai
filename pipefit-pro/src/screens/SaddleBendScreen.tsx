@@ -29,7 +29,6 @@ export function SaddleBendScreen() {
         width: u.parse(width),
         distanceToObstruction: u.parse(distance),
         centerAngle,
-        benderTakeUp: 0,
       }),
     [type, depth, width, distance, centerAngle, u]
   );
@@ -118,7 +117,11 @@ export function SaddleBendScreen() {
         tone={pristine ? 'idle' : result.error ? 'error' : 'default'}
       />
 
-      <MetaBar text={`${type === 'three' ? '3-point saddle' : '4-point saddle'} · Multiplier ${result.valid ? result.multiplier.toFixed(2) : '—'}`} />
+      <MetaBar
+        text={`${type === 'three' ? '3-point saddle' : '4-point saddle'} · ${
+          Number.isFinite(result.sideAngle) ? `${result.sideAngle.toFixed(2)}° bends` : '—'
+        } · Multiplier ${Number.isFinite(result.multiplier) ? result.multiplier.toFixed(3) : '—'}`}
+      />
 
       <View>
         {result.marks.map((m, i) => (
@@ -162,14 +165,16 @@ export function SaddleBendScreen() {
 
       <StatGrid
         stats={[
-          { label: 'Multiplier', value: result.valid ? result.multiplier.toFixed(3) : '—' },
-          { label: 'Shrink', value: result.valid ? u.dual(result.shrink) : '—' },
-          { label: 'Developed length', value: result.valid ? u.dual(result.developedLength) : '—' },
-          { label: 'Marks', value: result.valid ? String(result.marks.length) : '—' },
+          { label: 'Multiplier', note: '1 / sin of bend angle', value: Number.isFinite(result.multiplier) ? result.multiplier.toFixed(3) : '—' },
+          { label: 'Total shrink', note: 'Run lost across both ends', value: result.valid ? u.dual(result.shrink) : '—' },
+          { label: 'Shrink per bend pair', value: result.valid ? u.dual(result.shrinkPerBend) : '—' },
+          { label: 'Developed length', note: 'Conduit inside the marks', value: result.valid ? u.dual(result.developedLength) : '—' },
+          { label: 'Bend angle', value: Number.isFinite(result.sideAngle) ? u.angle(result.sideAngle, 2) : '—' },
+          { label: 'Min. clearance', note: 'Obstruction must sit past this', value: Number.isFinite(result.minimumDistance) ? u.dual(result.minimumDistance) : '—' },
         ]}
       />
 
-      <FooterNote text="Marks are centre-of-bend positions measured from the conduit end. Shrink uses the standard 3/16 in per inch of depth at 45°." />
+      <FooterNote text="Marks are centre-of-bend positions measured along the conduit from the end you start your tape on. Multiplier is 1/sin(angle) and shrink is tan(angle/2) per bend pair — exact centreline geometry, not the rounded field table." />
     </Screen>
   );
 }

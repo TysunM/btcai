@@ -33,8 +33,6 @@ export const PIPE_SIZES: PipeSize[] = [
   { nps: 24, label: '24"', od: 24.0, wall: { '10': 0.25, '40': 0.687, '80': 1.218 } },
 ];
 
-export const DEFAULT_NPS = 2;
-
 export function findSize(nps: number): PipeSize {
   return PIPE_SIZES.find((s) => s.nps === nps) ?? PIPE_SIZES[5]!;
 }

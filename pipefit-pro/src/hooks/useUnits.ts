@@ -62,7 +62,6 @@ export function useUnits() {
       weight,
       angle,
       decimal,
-      display: (v: number, s: string) => fromInches(v, s === 'metric' ? 'metric' : 'imperial'),
     }),
     [system, denominator, parse, num, full, frac, dual, weight]
   );

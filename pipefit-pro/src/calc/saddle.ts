@@ -8,7 +8,6 @@ export type SaddleInput = {
   width: number;
   distanceToObstruction: number;
   centerAngle: number;
-  benderTakeUp: number;
 };
 
 export type SaddleMark = {
@@ -21,64 +20,111 @@ export type SaddleMark = {
 export type SaddleResult = {
   valid: boolean;
   error?: string;
+  sideAngle: number;
   multiplier: number;
   shrink: number;
+  shrinkPerBend: number;
   marks: SaddleMark[];
   developedLength: number;
+  minimumDistance: number;
 };
 
-const SHRINK_PER_INCH: Record<number, number> = { 45: 0.1875, 30: 0.125, 22.5: 0.09375 };
+const EMPTY: SaddleResult = {
+  valid: false,
+  sideAngle: NaN,
+  multiplier: NaN,
+  shrink: NaN,
+  shrinkPerBend: NaN,
+  marks: [],
+  developedLength: NaN,
+  minimumDistance: NaN,
+};
 
-export function saddleMultiplier(sideAngle: number): number {
-  return 1 / Math.sin(rad(sideAngle));
+export function offsetMultiplier(angleDeg: number): number {
+  return 1 / Math.sin(rad(angleDeg));
+}
+
+export function offsetShrinkPerUnit(angleDeg: number): number {
+  return Math.tan(rad(angleDeg) / 2);
 }
 
 export function solveSaddle(input: SaddleInput): SaddleResult {
-  const { depth, distanceToObstruction, centerAngle } = input;
-  const empty: SaddleResult = { valid: false, multiplier: NaN, shrink: NaN, marks: [], developedLength: NaN };
+  const { depth, width, distanceToObstruction, centerAngle } = input;
 
-  if (!Number.isFinite(depth) || depth <= 0) return { ...empty, error: 'Enter an obstruction depth greater than zero.' };
+  if (!Number.isFinite(depth) || depth <= 0) return { ...EMPTY, error: 'Enter an obstruction depth greater than zero.' };
+  if (!(centerAngle > 0 && centerAngle < 90)) return { ...EMPTY, error: 'Bend angle must be between 0° and 90°.' };
   if (!Number.isFinite(distanceToObstruction) || distanceToObstruction <= 0)
-    return { ...empty, error: 'Enter the distance from the conduit end to the obstruction.' };
-
-  const shrinkRate = SHRINK_PER_INCH[centerAngle] ?? 0.1875;
+    return { ...EMPTY, error: 'Enter the distance from the conduit end to the obstruction.' };
 
   if (input.type === 'three') {
     const sideAngle = centerAngle / 2;
-    const multiplier = saddleMultiplier(sideAngle);
+    const multiplier = offsetMultiplier(sideAngle);
     const spacing = depth * multiplier;
-    const shrink = depth * shrinkRate;
-    const center = distanceToObstruction + shrink;
+    const shrinkPerBend = depth * offsetShrinkPerUnit(sideAngle);
+    const center = distanceToObstruction + shrinkPerBend;
+    const first = center - spacing;
+    const minimumDistance = spacing - shrinkPerBend;
+
+    if (first < 0)
+      return {
+        ...EMPTY,
+        sideAngle,
+        multiplier,
+        minimumDistance,
+        error: 'Obstruction is too close to the conduit end for this depth and angle.',
+      };
+
     return {
       valid: true,
+      sideAngle,
       multiplier,
-      shrink,
+      shrinkPerBend,
+      shrink: shrinkPerBend * 2,
       developedLength: spacing * 2,
+      minimumDistance,
       marks: [
-        { label: 'Mark 1', position: center - spacing, angle: sideAngle, note: 'Bend away from centre mark' },
+        { label: 'Mark 1', position: first, angle: sideAngle, note: 'Bend up, arrow to the centre mark' },
         { label: 'Centre', position: center, angle: centerAngle, note: 'Bend over the obstruction' },
-        { label: 'Mark 3', position: center + spacing, angle: sideAngle, note: 'Bend away from centre mark' },
+        { label: 'Mark 3', position: center + spacing, angle: sideAngle, note: 'Bend down, back to level' },
       ],
     };
   }
 
-  if (!Number.isFinite(input.width) || input.width <= 0)
-    return { ...empty, error: 'Enter the obstruction width for a four-point saddle.' };
+  if (!Number.isFinite(width) || width <= 0)
+    return { ...EMPTY, error: 'Enter the obstruction width for a four-point saddle.' };
 
-  const multiplier = saddleMultiplier(centerAngle);
+  const multiplier = offsetMultiplier(centerAngle);
   const spacing = depth * multiplier;
-  const shrink = depth * shrinkRate * 2;
-  const first = distanceToObstruction + shrink / 2;
+  const shrinkPerBend = depth * offsetShrinkPerUnit(centerAngle);
+  const horizontalRun = depth / Math.tan(rad(centerAngle));
+  const first = distanceToObstruction - horizontalRun;
+  const minimumDistance = horizontalRun;
+
+  if (first < 0)
+    return {
+      ...EMPTY,
+      sideAngle: centerAngle,
+      multiplier,
+      minimumDistance,
+      error: 'Obstruction is too close to the conduit end for this depth and angle.',
+    };
+
+  const second = first + spacing;
+  const third = second + width;
+
   return {
     valid: true,
+    sideAngle: centerAngle,
     multiplier,
-    shrink,
-    developedLength: spacing * 2 + input.width,
+    shrinkPerBend,
+    shrink: shrinkPerBend * 2,
+    developedLength: spacing * 2 + width,
+    minimumDistance,
     marks: [
-      { label: 'Mark 1', position: first, angle: centerAngle, note: 'First offset — up' },
-      { label: 'Mark 2', position: first + spacing, angle: centerAngle, note: 'First offset — level' },
-      { label: 'Mark 3', position: first + spacing + input.width, angle: centerAngle, note: 'Second offset — down' },
-      { label: 'Mark 4', position: first + spacing * 2 + input.width, angle: centerAngle, note: 'Second offset — level' },
+      { label: 'Mark 1', position: first, angle: centerAngle, note: 'First offset — start the climb' },
+      { label: 'Mark 2', position: second, angle: centerAngle, note: 'First offset — level off above' },
+      { label: 'Mark 3', position: third, angle: centerAngle, note: 'Second offset — start the descent' },
+      { label: 'Mark 4', position: third + spacing, angle: centerAngle, note: 'Second offset — back to level' },
     ],
   };
 }

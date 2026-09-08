@@ -1,5 +1,3 @@
-import { UnitSystem, fromInches, unitLabel } from './units';
-
 export type FractionDenominator = 0 | 8 | 16 | 32 | 64;
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
@@ -19,18 +17,6 @@ export function toFraction(inches: number, denominator: FractionDenominator): st
 export function decimal(value: number, places = 2): string {
   if (!Number.isFinite(value)) return '—';
   return value.toFixed(places);
-}
-
-export function measure(inches: number, system: UnitSystem, places?: number): string {
-  if (!Number.isFinite(inches)) return '—';
-  const p = places ?? (system === 'metric' ? 1 : 2);
-  return `${fromInches(inches, system).toFixed(p)} ${unitLabel(system)}`;
-}
-
-export function measureShort(inches: number, system: UnitSystem, places?: number): string {
-  if (!Number.isFinite(inches)) return '—';
-  const p = places ?? (system === 'metric' ? 1 : 2);
-  return fromInches(inches, system).toFixed(p);
 }
 
 export function angle(degrees: number, places = 1): string {

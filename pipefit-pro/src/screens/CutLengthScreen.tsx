@@ -10,7 +10,7 @@ import { PipeSheet } from '../components/PipeSheet';
 import { useUnits } from '../hooks/useUnits';
 import { usePipeConfig } from '../hooks/usePipeConfig';
 import { useSettings } from '../state/settings';
-import { END_FITTINGS, EndFitting, solveCutLength } from '../calc/cutLength';
+import { END_FITTINGS, EndFitting, FITTING_SOURCE, solveCutLength } from '../calc/cutLength';
 
 export function CutLengthScreen() {
   const u = useUnits();
@@ -129,7 +129,9 @@ export function CutLengthScreen() {
         text={result.valid ? `Pipe weight ${u.weight(result.weight, 2)} for this cut` : 'Pipe weight unavailable'}
       />
 
-      <FooterNote text="Takeouts from ASME B16.9 (elbows, tees) and B16.5 (flange lengths). Verify against the fittings actually on site." />
+      <FooterNote
+        text={`End A — ${FITTING_SOURCE[endA]}.  End B — ${FITTING_SOURCE[endB]}.  Every takeout is shown above; check it against the fitting in your hand before you cut.`}
+      />
 
       <PipeSheet
         visible={pipe.sheetOpen}

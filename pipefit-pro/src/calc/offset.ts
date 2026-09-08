@@ -56,8 +56,10 @@ export function solveOffset(input: OffsetInput): OffsetResult {
   let cutAngle = input.fittingAngle;
   let run: number;
 
-  if (input.lockRun && Number.isFinite(input.run ?? NaN) && (input.run as number) > 0) {
-    run = input.run as number;
+  if (input.lockRun) {
+    const locked = input.run ?? NaN;
+    if (!Number.isFinite(locked) || locked <= 0) return { ...EMPTY, error: 'Enter a run greater than zero.' };
+    run = locked;
     cutAngle = deg(Math.atan(offset / run));
   } else {
     if (!(cutAngle > 0 && cutAngle < 90)) return { ...EMPTY, error: 'Fitting angle must be between 0° and 90°.' };
